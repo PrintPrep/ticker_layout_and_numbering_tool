@@ -1,36 +1,109 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ============================================================================
+# FILE: README.md (Frontend)
+# ============================================================================
 
-## Getting Started
+# Ticket Layout & Numbering Tool - Frontend
 
-First, run the development server:
+Next.js 16 frontend for ticket layout optimization and PDF generation.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Features
+
+- Wizard flow for side selection and file upload
+- Numbering editor with drag-and-drop elements
+- Real-time layout preview
+- CSV/XLSX data import
+- QR code and barcode support
+- Multi-page PDF export
+
+## Setup
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Copy `.env.local.example` to `.env.local` and configure:
+   ```bash
+   cp .env.local.example .env.local
+   ```
+
+3. Start development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Open http://localhost:3000
+
+## Project Structure
+
+```
+├── app/
+│   ├── page.tsx                    # Landing page
+│   ├── layout.tsx                  # Root layout
+│   ├── tools/
+│   │   └── ticket-layout/
+│   │       ├── page.tsx            # Main workspace
+│   │       ├── wizard/
+│   │       │   └── page.tsx        # Upload wizard
+│   │       └── numbering-editor/
+│   │           └── page.tsx        # Numbering editor
+│   └── api/
+│       ├── files/
+│       ├── numbering/
+│       ├── layout/
+│       ├── export/
+│       └── projects/
+├── components/
+│   └── tools/
+│       └── ticket-layout/
+├── lib/
+│   ├── ticket-layout/
+│   │   ├── zustandStore.ts         # Global state
+│   │   ├── optimize.ts             # Layout algorithm
+│   │   └── numberingGenerator.ts   # Numbering logic
+│   ├── api/
+│   │   ├── apiClient.ts            # Python backend client
+│   │   └── fileUpload.ts           # File utilities
+│   ├── constants/
+│   │   ├── paperSizes.ts
+│   │   └── marginPresets.ts
+│   └── utils/
+│       ├── formatters.ts
+│       └── exportHelpers.ts
+└── .env.local                      # Environment variables
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `NEXT_PUBLIC_PYTHON_BACKEND_URL` - Python backend URL
+- `PYTHON_BACKEND_URL` - Server-side backend URL
+- `NEXT_PUBLIC_APP_URL` - App URL (for redirects)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Development
 
-## Learn More
+- State persists in localStorage via Zustand
+- Real-time preview uses client-side optimization
+- API routes proxy requests to Python backend
+- File uploads handled via FormData
 
-To learn more about Next.js, take a look at the following resources:
+## Deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Vercel (Recommended)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Connect GitHub repository
+2. Set environment variables
+3. Deploy automatically
 
-## Deploy on Vercel
+### Manual Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run build
+npm start
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## TODO (When Auth is Ready)
+
+- Uncomment auth middleware in `middleware.ts`
+- Enable project saving in API routes
+- Add user-specific project loading
+- Implement cloud storage integration
