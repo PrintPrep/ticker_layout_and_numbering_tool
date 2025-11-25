@@ -98,7 +98,7 @@ export default function OptimizePanel() {
         <select
           value={layout.paperSize}
           onChange={(e) => handlePaperSizeChange(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus:border-[#00BFA6] focus:ring-2 focus:ring-[#00BFA6]"
+          className="w-full rounded-lg border text-gray-500 border-gray-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus:border-[#00BFA6] focus:ring-2 focus:ring-[#00BFA6]"
         >
           {Object.entries(PAPER_SIZES).map(([key, value]) => (
             <option key={key} value={key}>
@@ -116,7 +116,7 @@ export default function OptimizePanel() {
                 type="number"
                 value={layout.paperWidthMm}
                 onChange={(e) => setLayout({ paperWidthMm: parseFloat(e.target.value) })}
-                className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                className="w-full rounded border text-gray-500 border-gray-300 px-2 py-1.5 text-sm"
               />
             </div>
             <div>
@@ -125,11 +125,48 @@ export default function OptimizePanel() {
                 type="number"
                 value={layout.paperHeightMm}
                 onChange={(e) => setLayout({ paperHeightMm: parseFloat(e.target.value) })}
-                className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                className="w-full rounded border text-gray-500 border-gray-300 px-2 py-1.5 text-sm"
               />
             </div>
           </div>
         )}
+      </div>
+
+      {/* Orientation Options */}
+      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">
+          Orientation
+        </label>
+        
+        <select
+          value={
+            layout.horizontalOnly ? "horizontal" :
+            layout.verticalOnly ? "vertical" :
+            layout.autoRotate ? "auto" :
+            "none"
+          }
+          onChange={(e) => {
+            const value = e.target.value;
+            setLayout({
+              horizontalOnly: value === "horizontal",
+              verticalOnly: value === "vertical",
+              autoRotate: value === "auto",
+            });
+          }}
+          className="w-full rounded-lg border border-gray-300 text-gray-500 bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors focus:border-[#00BFA6] focus:ring-2 focus:ring-[#00BFA6]"
+        >
+          <option value="auto">Auto-rotate (fit more)</option>
+          <option value="horizontal">Horizontal only</option>
+          <option value="vertical">Vertical only</option>
+          <option value="none">No rotation</option>
+        </select>
+        
+        <p className="mt-2 text-xs text-gray-500">
+          {layout.autoRotate && "Will try both orientations for optimal fit"}
+          {layout.horizontalOnly && "Cards will only be placed horizontally"}
+          {layout.verticalOnly && "Cards will only be placed vertically"}
+          {!layout.autoRotate && !layout.horizontalOnly && !layout.verticalOnly && "Cards placed without rotation"}
+        </p>
       </div>
 
       {/* Card Dimensions */}
@@ -156,7 +193,7 @@ export default function OptimizePanel() {
               value={layout.cardWidthMm}
               onChange={(e) => setLayout({ cardWidthMm: parseFloat(e.target.value) })}
               disabled={layout.aspectRatioLocked}
-              className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm disabled:bg-gray-50 disabled:opacity-60"
+              className="w-full rounded border text-gray-500 border-gray-300 px-2 py-1.5 text-sm disabled:bg-gray-50 disabled:opacity-60"
             />
           </div>
           <div>
@@ -165,7 +202,7 @@ export default function OptimizePanel() {
               type="number"
               value={layout.cardHeightMm}
               onChange={(e) => handleCardHeightChange(parseFloat(e.target.value))}
-              className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+              className="w-full rounded border text-gray-500 border-gray-300 px-2 py-1.5 text-sm"
             />
           </div>
         </div>
@@ -180,7 +217,7 @@ export default function OptimizePanel() {
         <select
           value={layout.marginPreset}
           onChange={(e) => handleMarginPresetChange(e.target.value as MarginPreset)}
-          className="mb-3 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm"
+          className="mb-3 w-full rounded-lg border text-gray-500 border-gray-300 bg-white px-3 py-2 text-sm shadow-sm"
         >
           {Object.entries(MARGIN_PRESETS).map(([key, value]) => (
             <option key={key} value={key}>
@@ -199,7 +236,7 @@ export default function OptimizePanel() {
                   type="number"
                   value={layout.topMarginMm}
                   onChange={(e) => setLayout({ topMarginMm: parseFloat(e.target.value) })}
-                  className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                  className="w-full rounded border text-gray-500 border-gray-300 px-2 py-1.5 text-sm"
                 />
               </div>
               <div>
@@ -208,7 +245,7 @@ export default function OptimizePanel() {
                   type="number"
                   value={layout.bottomMarginMm}
                   onChange={(e) => setLayout({ bottomMarginMm: parseFloat(e.target.value) })}
-                  className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                  className="w-full rounded border text-gray-500 border-gray-300 px-2 py-1.5 text-sm"
                 />
               </div>
             </div>
@@ -219,7 +256,7 @@ export default function OptimizePanel() {
                   type="number"
                   value={layout.leftMarginMm}
                   onChange={(e) => setLayout({ leftMarginMm: parseFloat(e.target.value) })}
-                  className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                  className="w-full rounded border text-gray-500 border-gray-300 px-2 py-1.5 text-sm"
                 />
               </div>
               <div>
@@ -228,7 +265,7 @@ export default function OptimizePanel() {
                   type="number"
                   value={layout.rightMarginMm}
                   onChange={(e) => setLayout({ rightMarginMm: parseFloat(e.target.value) })}
-                  className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                  className="w-full rounded border text-gray-500 border-gray-300 px-2 py-1.5 text-sm"
                 />
               </div>
             </div>
@@ -238,7 +275,7 @@ export default function OptimizePanel() {
                 type="number"
                 value={layout.spacingMm}
                 onChange={(e) => setLayout({ spacingMm: parseFloat(e.target.value) })}
-                className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                className="w-full rounded border text-gray-500 border-gray-300 px-2 py-1.5 text-sm"
               />
             </div>
           </div>
@@ -256,7 +293,7 @@ export default function OptimizePanel() {
           value={layout.cardCount}
           onChange={(e) => setLayout({ cardCount: parseInt(e.target.value) })}
           placeholder="0 = fill maximum"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm"
+          className="w-full rounded-lg border text-gray-500 border-gray-300 px-3 py-2 text-sm shadow-sm"
         />
       </div>
 

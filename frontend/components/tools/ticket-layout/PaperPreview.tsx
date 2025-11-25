@@ -9,7 +9,7 @@ import { useStore } from "@/lib/ticket-layout/zustandStore";
 import PlacementSlot from "./PlacementSlot";
 import FittedBadge from "./FittedBadge";
 import BottomAccent from "./BottomAccent";
-import { SpacingOverlay } from "./OptimizePanel";
+import { SpacingOverlay } from "./SpacingOverlay";
 
 type Placement = {
   index: number;

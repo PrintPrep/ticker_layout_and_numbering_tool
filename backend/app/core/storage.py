@@ -32,9 +32,9 @@ class SupabaseStorage(StorageProvider):
     """Supabase Storage implementation"""
     
     def __init__(self):
-        from supabase import create_client, Client
+        from supabase import create_client  # CHANGED: removed ", Client"
         
-        self.client: Client = create_client(
+        self.client = create_client(  # CHANGED: removed ", Client"
             settings.SUPABASE_URL,
             settings.SUPABASE_SERVICE_ROLE_KEY
         )
@@ -49,15 +49,15 @@ class SupabaseStorage(StorageProvider):
             storage_path = f"{folder}/{file_id}.{ext}" if folder else f"{file_id}.{ext}"
             
             # Upload
-            response = self.client.storage.from_(self.bucket_name).upload(
+            response = self.client.storage().from_(self.bucket_name).upload(
                 path=storage_path,
                 file=file_bytes,
                 file_options={"content-type": f"image/{ext}"}
             )
             
             # Get public URL
-            public_url = self.client.storage.from_(self.bucket_name).get_public_url(storage_path)
-            
+            public_url = self.client.storage().from_(self.bucket_name).get_public_url(storage_path)
+
             logger.info(f"Uploaded to Supabase: {storage_path}")
             return public_url
         
@@ -71,7 +71,7 @@ class SupabaseStorage(StorageProvider):
             # Extract path from URL
             path = file_url.split(f"{self.bucket_name}/")[-1]
             
-            self.client.storage.from_(self.bucket_name).remove([path])
+            self.client.storage().from_(self.bucket_name).remove([path])
             logger.info(f"Deleted from Supabase: {path}")
             return True
         

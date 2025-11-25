@@ -38,24 +38,65 @@ export type Placement = {
  * Same algorithm as Python backend for real-time preview
  */
 export function optimizeLayout(opts: LayoutOptions): { placements: Placement[]; fittedCount: number } {
-  // Margins (default to 5mm)
   const topMargin = opts.topMarginMm ?? 5;
   const bottomMargin = opts.bottomMarginMm ?? 5;
   const leftMargin = opts.leftMarginMm ?? 5;
   const rightMargin = opts.rightMarginMm ?? 5;
-  
-  // Spacing (default to 5mm)
   const spacing = opts.spacingMm ?? 5;
   
-  // Calculate usable area
   const usableWidth = Math.max(0, opts.paperWidthMm - leftMargin - rightMargin);
   const usableHeight = Math.max(0, opts.paperHeightMm - topMargin - bottomMargin);
   
-  // Card dimensions with spacing
-  const cardWithSpacingW = opts.cardWidthMm + spacing;
-  const cardWithSpacingH = opts.cardHeightMm + spacing;
+  // Try different orientations
+  const layouts: { placements: Placement[]; count: number; orientation: 'horizontal' | 'vertical' }[] = [];
   
-  // Calculate grid (spacing not counted on last column/row)
+  // Horizontal layout
+  if (!opts.verticalOnly) {
+    const horizontal = calculateGrid(
+      usableWidth, usableHeight,
+      opts.cardWidthMm, opts.cardHeightMm,
+      spacing, leftMargin, topMargin, 0
+    );
+    layouts.push({ placements: horizontal, count: horizontal.length, orientation: 'horizontal' });
+  }
+  
+  // Vertical layout (90° rotation)
+  if (!opts.horizontalOnly && (opts.autoRotate || opts.verticalOnly)) {
+    const vertical = calculateGrid(
+      usableWidth, usableHeight,
+      opts.cardHeightMm, opts.cardWidthMm,  // Swapped dimensions
+      spacing, leftMargin, topMargin, 90
+    );
+    layouts.push({ placements: vertical, count: vertical.length, orientation: 'vertical' });
+  }
+  
+  // Choose best layout
+  const bestLayout = layouts.sort((a, b) => b.count - a.count)[0];
+  if (!bestLayout) {
+    return { placements: [], fittedCount: 0 };
+  }
+  
+  let final = bestLayout.placements;
+  if (opts.cardCount && opts.cardCount > 0) {
+    final = final.slice(0, opts.cardCount);
+  }
+  
+  return { placements: final, fittedCount: final.length };
+}
+
+function calculateGrid(
+  usableWidth: number,
+  usableHeight: number,
+  cardWidth: number,
+  cardHeight: number,
+  spacing: number,
+  leftMargin: number,
+  topMargin: number,
+  rotation: 0 | 90
+): Placement[] {
+  const cardWithSpacingW = cardWidth + spacing;
+  const cardWithSpacingH = cardHeight + spacing;
+  
   const cols = Math.floor((usableWidth + spacing) / cardWithSpacingW);
   const rows = Math.floor((usableHeight + spacing) / cardWithSpacingH);
   
@@ -64,39 +105,23 @@ export function optimizeLayout(opts: LayoutOptions): { placements: Placement[]; 
   
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
-      // Position includes margin offset
       const x = leftMargin + col * cardWithSpacingW;
       const y = topMargin + row * cardWithSpacingH;
       
       placements.push({
         xMm: Number(x.toFixed(6)),
         yMm: Number(y.toFixed(6)),
-        widthMm: Number(opts.cardWidthMm.toFixed(6)),
-        heightMm: Number(opts.cardHeightMm.toFixed(6)),
-        rotation: 0,
+        widthMm: Number(cardWidth.toFixed(6)),
+        heightMm: Number(cardHeight.toFixed(6)),
+        rotation: rotation,
         row,
         col,
         index: index++,
       });
-      
-      // Stop if card count specified and reached
-      if (opts.cardCount && index >= opts.cardCount) {
-        break;
-      }
-    }
-    
-    if (opts.cardCount && index >= opts.cardCount) {
-      break;
     }
   }
   
-  // Limit to requested count
-  let final = placements;
-  if (opts.cardCount && opts.cardCount > 0) {
-    final = placements.slice(0, opts.cardCount);
-  }
-  
-  return { placements: final, fittedCount: final.length };
+  return placements;
 }
 
 /**
