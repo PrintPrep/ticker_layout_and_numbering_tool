@@ -179,8 +179,6 @@ function calculateMixedOrientationLayout(
   ];
   
   let index = 0;
-  let gridRow = 0;
-  let gridCol = 0;
   
   // Keep trying to place cards until no more space
   while (freeRectangles.length > 0) {
@@ -224,19 +222,15 @@ function calculateMixedOrientationLayout(
     const actualWidth = bestRotation === 0 ? cardWidth : cardHeight;
     const actualHeight = bestRotation === 0 ? cardHeight : cardWidth;
     
-    // FIX: Use the correct dimensions for space calculation
-    const placedWidth = bestRotation === 0 ? cardWidth : cardHeight;
-    const placedHeight = bestRotation === 0 ? cardHeight : cardWidth;
-    
     // Place the card
     placements.push({
       xMm: Number((leftMargin + bestRect.x).toFixed(6)),
       yMm: Number((topMargin + bestRect.y).toFixed(6)),
-      widthMm: Number(placedWidth.toFixed(6)),  // Use placedWidth instead of actualWidth
-      heightMm: Number(placedHeight.toFixed(6)), // Use placedHeight instead of actualHeight
+      widthMm: Number(actualWidth.toFixed(6)),
+      heightMm: Number(actualHeight.toFixed(6)),
       rotation: bestRotation,
-      row: gridRow,
-      col: gridCol,
+      row: Math.floor(index / 10), // Approximate row for display
+      col: index % 10, // Approximate column for display
       index: index++,
     });
     
@@ -244,14 +238,13 @@ function calculateMixedOrientationLayout(
     freeRectangles.splice(bestRectIndex, 1);
     
     // Split remaining space using guillotine cuts
-    // FIX: Use placed dimensions for space calculation
-    const remainingRight = bestRect.width - placedWidth - spacing;
-    const remainingBottom = bestRect.height - placedHeight - spacing;
+    const remainingRight = bestRect.width - actualWidth - spacing;
+    const remainingBottom = bestRect.height - actualHeight - spacing;
     
     // Add right rectangle if there's space
     if (remainingRight > 0) {
       freeRectangles.push({
-        x: bestRect.x + placedWidth + spacing,
+        x: bestRect.x + actualWidth + spacing,
         y: bestRect.y,
         width: remainingRight,
         height: bestRect.height
@@ -262,17 +255,10 @@ function calculateMixedOrientationLayout(
     if (remainingBottom > 0) {
       freeRectangles.push({
         x: bestRect.x,
-        y: bestRect.y + placedHeight + spacing,
-        width: bestRect.width,  // FIX: Use full width, not just placed width
+        y: bestRect.y + actualHeight + spacing,
+        width: actualWidth, // Only the width we actually used
         height: remainingBottom
       });
-    }
-    
-    // Update grid position (approximate)
-    gridCol++;
-    if (gridCol > 5) { // Arbitrary wrap for display purposes
-      gridCol = 0;
-      gridRow++;
     }
     
     // Sort rectangles by area (larger first) for better packing

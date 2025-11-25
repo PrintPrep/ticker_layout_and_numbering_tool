@@ -11,8 +11,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     console.log("Calling Python backend for direct export...");
+    console.log("Backend URL:", PYTHON_BACKEND_URL);
 
-    // Fix the URL - it should be /api/v1/export/direct
     const response = await fetch(`${PYTHON_BACKEND_URL}/api/v1/export/direct`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Backend error:", errorText);
+      console.error("Backend error response:", errorText);
       throw new Error(errorText || `Backend returned ${response.status}`);
     }
 

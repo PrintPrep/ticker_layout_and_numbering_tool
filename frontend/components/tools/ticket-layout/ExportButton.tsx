@@ -28,14 +28,25 @@ export default function ExportButton() {
     setIsExporting(true);
 
     try {
-      // Prepare export data
+      // Prepare export data - match the Python backend model exactly
       const exportData = {
         designFiles: {
-          frontFileId: front?.url,
-          backFileId: back?.url,
+          frontFileId: front.url, // This should be the URL that Python backend can fetch
+          backFileId: back?.url || null,
         },
         layoutConfig: {
-          placements: placements,
+          placements: placements.map(p => ({
+            ...p,
+            // Ensure all required fields are present
+            index: p.index,
+            xMm: p.xMm,
+            yMm: p.yMm,
+            widthMm: p.widthMm,
+            heightMm: p.heightMm,
+            rotation: p.rotation || 0,
+            row: p.row || 0,
+            col: p.col || 0,
+          })),
           totalCopies: layout.cardCount || placements.length,
           paperSettings: {
             paperWidthMm: layout.paperWidthMm,
@@ -48,16 +59,18 @@ export default function ExportButton() {
           },
         },
         exportSettings: {
-          quality: "print", // Default to print quality
-          colorSpace: "RGB", // Default to RGB
+          quality: "print",
+          colorSpace: "RGB",
         },
-        numberingConfig: {
+        numberingConfig: numberingElements && (numberingElements.front.length > 0 || numberingElements.back.length > 0) ? {
           elements: [...numberingElements.front, ...numberingElements.back],
-        },
-        importedData: importedData ? { importId: importedData.importId } : undefined,
+        } : null,
+        importedData: importedData ? { importId: importedData.importId } : null,
       };
 
-      // Call the direct export API
+      console.log("Sending export request...", exportData);
+
+      // Call the Next.js API route (not directly to Python backend)
       const response = await fetch("/api/export/direct", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -65,12 +78,17 @@ export default function ExportButton() {
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || "Export failed");
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Export failed with status: ${response.status}`);
       }
 
       // Get the PDF blob and download
       const blob = await response.blob();
+      
+      if (blob.size === 0) {
+        throw new Error("Received empty PDF file");
+      }
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.style.display = "none";
@@ -78,8 +96,12 @@ export default function ExportButton() {
       a.download = `tickets_export_${new Date().getTime()}.pdf`;
       document.body.appendChild(a);
       a.click();
+      
+      // Clean up
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+
+      console.log("PDF downloaded successfully");
 
     } catch (err: any) {
       console.error("Export error:", err);

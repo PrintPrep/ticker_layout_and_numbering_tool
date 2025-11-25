@@ -17,6 +17,24 @@ export default function OptimizePanel() {
 
   const [lastResult, setLastResult] = useState({ fitted: 0 });
 
+  // Handle width changes with aspect ratio lock
+  const handleCardWidthChange = (newWidth: number) => {
+    setLayout({ cardWidthMm: newWidth });
+    if (layout.aspectRatioLocked && layout.aspectRatio && newWidth > 0) {
+      const newHeight = newWidth / layout.aspectRatio;
+      setLayout({ cardHeightMm: newHeight });
+    }
+  };
+
+  // Handle height changes with aspect ratio lock
+  const handleCardHeightChange = (newHeight: number) => {
+    setLayout({ cardHeightMm: newHeight });
+    if (layout.aspectRatioLocked && layout.aspectRatio && newHeight > 0) {
+      const newWidth = newHeight * layout.aspectRatio;
+      setLayout({ cardWidthMm: newWidth });
+    }
+  };
+
   // Auto-optimize whenever layout changes
   useEffect(() => {
     const opts = {
@@ -52,6 +70,7 @@ export default function OptimizePanel() {
     layout.horizontalOnly,
     layout.verticalOnly,
     layout.autoRotate,
+    setPlacements,
   ]);
 
   const handlePaperSizeChange = (size: string) => {
@@ -76,15 +95,6 @@ export default function OptimizePanel() {
         rightMarginMm: margins.right,
         spacingMm: margins.spacing,
       });
-    }
-  };
-
-  const handleCardHeightChange = (newHeight: number) => {
-    setLayout({ cardHeightMm: newHeight });
-
-    if (layout.aspectRatioLocked && layout.aspectRatio && newHeight > 0) {
-      const newWidth = newHeight * layout.aspectRatio;
-      setLayout({ cardWidthMm: newWidth });
     }
   };
 
@@ -191,7 +201,7 @@ export default function OptimizePanel() {
             <input
               type="number"
               value={layout.cardWidthMm}
-              onChange={(e) => setLayout({ cardWidthMm: parseFloat(e.target.value) })}
+              onChange={(e) => handleCardWidthChange(parseFloat(e.target.value))}
               disabled={layout.aspectRatioLocked}
               className="w-full rounded border text-gray-500 border-gray-300 px-2 py-1.5 text-sm disabled:bg-gray-50 disabled:opacity-60"
             />
