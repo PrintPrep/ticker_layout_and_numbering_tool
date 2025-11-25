@@ -65,6 +65,9 @@ export default function PlacementSlot({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    // FIX: Apply rotation transform to the entire container
+    transform: `rotate(${rotation}deg)`,
+    transformOrigin: "center center",
   };
 
   const imageSrc = front?.url;
@@ -82,7 +85,14 @@ export default function PlacementSlot({
         <img
           src={imageSrc}
           alt={front?.name ?? `slot-${p.index}`}
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          style={{ 
+            width: "100%", 
+            height: "100%", 
+            objectFit: "contain", 
+            display: "block", 
+            maxWidth: "100%",
+            maxHeight: "100%",
+          }}
         />
       ) : (
         <div className="flex items-center justify-center h-full w-full text-xs text-gray-500">

@@ -1,6 +1,6 @@
-"""
-Pydantic models for PDF export
-"""
+# ============================================================================
+# FILE: backend/app/models/export_models.py
+# ============================================================================
 
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any, Literal
@@ -31,7 +31,7 @@ class PaperSettings(BaseModel):
 
 class LayoutConfig(BaseModel):
     """Layout configuration for export"""
-    placements: List[Dict[str, Any]]  # List of Placement objects
+    placements: List[Dict[str, Any]]
     totalCopies: int
     paperSettings: PaperSettings
 
@@ -41,16 +41,27 @@ class ImportedData(BaseModel):
     importId: str
 
 
+class DirectExportRequest(BaseModel):
+    """Request for direct PDF export (without project tracking)"""
+    designFiles: DesignFiles
+    layoutConfig: LayoutConfig
+    exportSettings: ExportSettings
+    numberingConfig: Optional[Dict[str, Any]] = None
+    importedData: Optional[ImportedData] = None
+    projectId: Optional[str] = None  # Make optional for direct exports
+    userId: Optional[str] = None
+
+
+# Keep the original for other endpoints if needed
 class InitiateExportRequest(BaseModel):
-    """Request to start PDF export"""
+    """Request to start PDF export (with project tracking)"""
     projectId: str
     userId: Optional[str] = None
     designFiles: DesignFiles
     layoutConfig: LayoutConfig
     exportSettings: ExportSettings
-    numberingConfig: Optional[Dict[str, Any]] = None  # Numbering configuration
+    numberingConfig: Optional[Dict[str, Any]] = None
     importedData: Optional[ImportedData] = None
-
 
 class ExportJobStatus(BaseModel):
     """Export job status"""

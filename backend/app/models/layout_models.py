@@ -1,4 +1,5 @@
 """
+backend/app/models/layout_models.py
 Pydantic models for layout optimization
 """
 
@@ -13,7 +14,7 @@ class Placement(BaseModel):
     yMm: float
     widthMm: float
     heightMm: float
-    rotation: int = Field(0, ge=0, le=270)
+    rotation: Literal[0, 90, 180, 270] = 0  # Updated to use Literal for type safety
     row: int
     col: int
 
@@ -35,7 +36,7 @@ class OptimizeLayoutRequest(BaseModel):
     # Spacing (gap between tickets)
     spacingMm: float = 5
     
-    # Orientation
+    # Orientation flags (kept for backward compatibility)
     horizontalOnly: bool = False
     verticalOnly: bool = False
     autoRotate: bool = True

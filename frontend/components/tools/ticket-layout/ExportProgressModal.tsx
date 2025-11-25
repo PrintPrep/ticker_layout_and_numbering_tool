@@ -105,6 +105,7 @@ export default function ExportProgressModal({ onClose }: ExportProgressModalProp
     className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm"
     style={{ zIndex: 99999 }}
     >
+      
       <div 
         className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
         style={{ zIndex: 100000 }}
