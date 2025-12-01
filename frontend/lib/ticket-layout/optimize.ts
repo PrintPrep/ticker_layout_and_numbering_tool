@@ -16,7 +16,7 @@ export type LayoutOptions = {
   // Spacing (gap between tickets)
   spacingMm?: number;
   
-  // Orientation
+  // Orientation flags
   horizontalOnly?: boolean;
   verticalOnly?: boolean;
   autoRotate?: boolean;
@@ -33,11 +33,25 @@ export type Placement = {
   index: number;
 };
 
+type Rectangle = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 /**
- * Client-side layout optimization
- * Same algorithm as Python backend for real-time preview
+ * Client-side layout optimization with three fill methods
+ * Matches Python backend algorithm exactly
  */
-export function optimizeLayout(opts: LayoutOptions): { placements: Placement[]; fittedCount: number } {
+export function optimizeLayout(opts: LayoutOptions): { 
+  placements: Placement[]; 
+  fittedCount: number;
+  ticketsPerSheet: number;
+  totalSheets: number;
+  usableWidthMm: number;
+  usableHeightMm: number;
+} {
   const topMargin = opts.topMarginMm ?? 5;
   const bottomMargin = opts.bottomMarginMm ?? 5;
   const leftMargin = opts.leftMarginMm ?? 5;
@@ -47,44 +61,66 @@ export function optimizeLayout(opts: LayoutOptions): { placements: Placement[]; 
   const usableWidth = Math.max(0, opts.paperWidthMm - leftMargin - rightMargin);
   const usableHeight = Math.max(0, opts.paperHeightMm - topMargin - bottomMargin);
   
-  // Try different orientations
-  const layouts: { placements: Placement[]; count: number; orientation: 'horizontal' | 'vertical' }[] = [];
+  // Determine fill mode from boolean flags
+  let fillMode: 'horizontal' | 'vertical' | 'auto-rotate';
+  if (opts.horizontalOnly) {
+    fillMode = 'horizontal';
+  } else if (opts.verticalOnly) {
+    fillMode = 'vertical';
+  } else if (opts.autoRotate !== false) {  // Default to autoRotate if not specified
+    fillMode = 'auto-rotate';
+  } else {
+    fillMode = 'horizontal';
+  }
   
-  // Horizontal layout
-  if (!opts.verticalOnly) {
-    const horizontal = calculateGrid(
+  let placements: Placement[] = [];
+  
+  // Calculate placements based on fill mode
+  if (fillMode === 'horizontal') {
+    placements = calculateGridLayout(
       usableWidth, usableHeight,
       opts.cardWidthMm, opts.cardHeightMm,
       spacing, leftMargin, topMargin, 0
     );
-    layouts.push({ placements: horizontal, count: horizontal.length, orientation: 'horizontal' });
-  }
-  
-  // Vertical layout (90° rotation)
-  if (!opts.horizontalOnly && (opts.autoRotate || opts.verticalOnly)) {
-    const vertical = calculateGrid(
+  } else if (fillMode === 'vertical') {
+    placements = calculateGridLayout(
       usableWidth, usableHeight,
-      opts.cardHeightMm, opts.cardWidthMm,  // Swapped dimensions
+      opts.cardHeightMm, opts.cardWidthMm, // Swapped
       spacing, leftMargin, topMargin, 90
     );
-    layouts.push({ placements: vertical, count: vertical.length, orientation: 'vertical' });
+  } else {
+    placements = calculateMixedOrientationLayout(
+      usableWidth, usableHeight,
+      opts.cardWidthMm, opts.cardHeightMm,
+      spacing, leftMargin, topMargin
+    );
   }
   
-  // Choose best layout
-  const bestLayout = layouts.sort((a, b) => b.count - a.count)[0];
-  if (!bestLayout) {
-    return { placements: [], fittedCount: 0 };
-  }
-  
-  let final = bestLayout.placements;
+  // Apply card count limit if specified
   if (opts.cardCount && opts.cardCount > 0) {
-    final = final.slice(0, opts.cardCount);
+    placements = placements.slice(0, opts.cardCount);
   }
   
-  return { placements: final, fittedCount: final.length };
+  const fittedCount = placements.length;
+  const ticketsPerSheet = placements.length;
+  const totalSheets = opts.cardCount 
+    ? Math.ceil(opts.cardCount / ticketsPerSheet)
+    : 1;
+  
+  return {
+    placements,
+    fittedCount,
+    ticketsPerSheet,
+    totalSheets,
+    usableWidthMm: usableWidth,
+    usableHeightMm: usableHeight
+  };
 }
 
-function calculateGrid(
+/**
+ * Grid-based layout (for horizontal or vertical only)
+ */
+function calculateGridLayout(
   usableWidth: number,
   usableHeight: number,
   cardWidth: number,
@@ -119,6 +155,117 @@ function calculateGrid(
         index: index++,
       });
     }
+  }
+  
+  return placements;
+}
+
+/**
+ * Mixed-orientation layout using guillotine bin packing
+ * This allows both horizontal and vertical cards on the same page
+ */
+function calculateMixedOrientationLayout(
+  usableWidth: number,
+  usableHeight: number,
+  cardWidth: number,
+  cardHeight: number,
+  spacing: number,
+  leftMargin: number,
+  topMargin: number
+): Placement[] {
+  const placements: Placement[] = [];
+  const freeRectangles: Rectangle[] = [
+    { x: 0, y: 0, width: usableWidth, height: usableHeight }
+  ];
+  
+  let index = 0;
+  
+  // Keep trying to place cards until no more space
+  while (freeRectangles.length > 0) {
+    // Find best rectangle and orientation
+    let bestRect: Rectangle | null = null;
+    let bestRectIndex = -1;
+    let bestRotation: 0 | 90 = 0;
+    let bestFit = Infinity;
+    
+    // Try each free rectangle
+    for (let i = 0; i < freeRectangles.length; i++) {
+      const rect = freeRectangles[i];
+      
+      // Try horizontal orientation (0°)
+      if (rect.width >= cardWidth && rect.height >= cardHeight) {
+        const wastedSpace = (rect.width * rect.height) - (cardWidth * cardHeight);
+        if (wastedSpace < bestFit) {
+          bestFit = wastedSpace;
+          bestRect = rect;
+          bestRectIndex = i;
+          bestRotation = 0;
+        }
+      }
+      
+      // Try vertical orientation (90°)
+      if (rect.width >= cardHeight && rect.height >= cardWidth) {
+        const wastedSpace = (rect.width * rect.height) - (cardHeight * cardWidth);
+        if (wastedSpace < bestFit) {
+          bestFit = wastedSpace;
+          bestRect = rect;
+          bestRectIndex = i;
+          bestRotation = 90;
+        }
+      }
+    }
+    
+    // No more space available
+    if (!bestRect) break;
+    
+    // Determine actual card dimensions based on rotation
+    const actualWidth = bestRotation === 0 ? cardWidth : cardHeight;
+    const actualHeight = bestRotation === 0 ? cardHeight : cardWidth;
+    
+    // Place the card
+    placements.push({
+      xMm: Number((leftMargin + bestRect.x).toFixed(6)),
+      yMm: Number((topMargin + bestRect.y).toFixed(6)),
+      widthMm: Number(actualWidth.toFixed(6)),
+      heightMm: Number(actualHeight.toFixed(6)),
+      rotation: bestRotation,
+      row: Math.floor(index / 10), // Approximate row for display
+      col: index % 10, // Approximate column for display
+      index: index++,
+    });
+    
+    // Remove used rectangle
+    freeRectangles.splice(bestRectIndex, 1);
+    
+    // Split remaining space using guillotine cuts
+    const remainingRight = bestRect.width - actualWidth - spacing;
+    const remainingBottom = bestRect.height - actualHeight - spacing;
+    
+    // Add right rectangle if there's space
+    if (remainingRight > 0) {
+      freeRectangles.push({
+        x: bestRect.x + actualWidth + spacing,
+        y: bestRect.y,
+        width: remainingRight,
+        height: bestRect.height
+      });
+    }
+    
+    // Add bottom rectangle if there's space
+    if (remainingBottom > 0) {
+      freeRectangles.push({
+        x: bestRect.x,
+        y: bestRect.y + actualHeight + spacing,
+        width: actualWidth, // Only the width we actually used
+        height: remainingBottom
+      });
+    }
+    
+    // Sort rectangles by area (larger first) for better packing
+    freeRectangles.sort((a, b) => (b.width * b.height) - (a.width * a.height));
+    
+    // Safety limit to prevent infinite loops
+    if (index > 1000) break;
   }
   
   return placements;

@@ -2,6 +2,7 @@
 // FILE: components/tools/ticket-layout/PlacementSlot.tsx
 // ============================================================================
 
+import { useState } from "react";
 import { NumberingGenerator } from "@/lib/ticket-layout/numberingGenerator";
 import { NumberingElement } from "@/lib/ticket-layout/zustandStore";
 
@@ -31,25 +32,41 @@ export default function PlacementSlot({
   paperWidthMm = 210,
   numberingElements = [],
 }: PlacementSlotProps) {
+  const [imageError, setImageError] = useState(false);
+
   let xMm = p.xMm;
   let yMm = p.yMm;
   let rotation = p.rotation ?? 0;
+  let displayWidth = p.widthMm;
+  let displayHeight = p.heightMm;
 
+  // Correct back side mirroring logic
   if (showBackSide) {
-    const centerX = p.xMm + p.widthMm / 2;
-    const centerY = p.yMm + p.heightMm / 2;
-    const newCenterX = paperWidthMm - centerX;
-    const newCenterY = centerY;
-    xMm = newCenterX - p.widthMm / 2;
-    yMm = newCenterY - p.heightMm / 2;
-
+    // For back side, flip horizontally
+    xMm = paperWidthMm - p.xMm - p.widthMm;
+    yMm = p.yMm;
+    
+    // Adjust rotation for back side printing
+    // When flipping horizontally:
+    // 0° stays 0° (just mirrored)
+    // 90° becomes 270° (mirrored + rotated)
+    // 180° stays 180° (just mirrored)  
+    // 270° becomes 90° (mirrored + rotated)
     if (rotation === 90) rotation = 270;
+    else if (rotation === 270) rotation = 90;
+    // 0° and 180° remain the same
+  }
+
+  // For 90° and 270° rotations, swap width and height for display
+  // This ensures the container matches the visual rotation
+  if (rotation === 90 || rotation === 270) {
+    [displayWidth, displayHeight] = [displayHeight, displayWidth];
   }
 
   const left = xMm * pxPerMm;
   const top = yMm * pxPerMm;
-  const w = p.widthMm * pxPerMm;
-  const h = p.heightMm * pxPerMm;
+  const w = displayWidth * pxPerMm;
+  const h = displayHeight * pxPerMm;
 
   const slotStyle: React.CSSProperties = {
     position: "absolute",
@@ -65,6 +82,8 @@ export default function PlacementSlot({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    transform: `rotate(${rotation}deg)`,
+    transformOrigin: "center center",
   };
 
   const imageSrc = front?.url;
@@ -78,15 +97,25 @@ export default function PlacementSlot({
 
   return (
     <div key={p.index} style={slotStyle} title={`#${p.index + 1}`}>
-      {imageSrc ? (
+      {imageSrc && !imageError ? (
         <img
           src={imageSrc}
           alt={front?.name ?? `slot-${p.index}`}
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          onError={() => setImageError(true)}
+          style={{ 
+            width: "100%", 
+            height: "100%", 
+            objectFit: "contain", 
+            display: "block", 
+            maxWidth: "100%",
+            maxHeight: "100%",
+            // Ensure image isn't fighting the container rotation
+            transform: rotation === 90 || rotation === 270 ? 'none' : undefined,
+          }}
         />
       ) : (
         <div className="flex items-center justify-center h-full w-full text-xs text-gray-500">
-          No design
+          {imageError ? "Image failed to load" : "No design"}
         </div>
       )}
 
@@ -105,6 +134,7 @@ export default function PlacementSlot({
             padding: "2px 6px",
             borderRadius: "4px",
             pointerEvents: "none",
+            zIndex: 2,
           }}
         >
           {numberingText}
@@ -124,6 +154,7 @@ export default function PlacementSlot({
           padding: "2px 6px",
           borderRadius: "4px",
           pointerEvents: "none",
+          zIndex: 2,
         }}
       >
         {p.index + 1}

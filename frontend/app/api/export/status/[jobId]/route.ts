@@ -3,6 +3,8 @@
 // ============================================================================
 import { NextRequest, NextResponse } from "next/server";
 
+const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || "http://localhost:8000";
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { jobId: string } }

@@ -2,7 +2,9 @@
 // FILE: components/tools/ticket-layout/NumberingEditor/DataSourceSelector.tsx
 // ============================================================================
 
+import { useState } from "react";
 import { Upload } from "lucide-react";
+import { useStore } from "@/lib/ticket-layout/zustandStore";  
 
 export default function DataSourceSelector() {
   const [dataSource, setDataSource] = useState<"manual" | "csv" | "xlsx">("manual");

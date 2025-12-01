@@ -2,6 +2,7 @@
 PDF Generation Service
 Uses ReportLab to create print-ready PDFs with tickets
 """
+# backend/app/services/pdf_generator.py
 
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
