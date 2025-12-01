@@ -2,6 +2,8 @@
 // FILE: components/tools/ticket-layout/NumberingEditor/ContainerSettings.tsx
 // ============================================================================
 
+import { useStore } from "@/lib/ticket-layout/zustandStore";  
+
 export default function ContainerSettings({ element, side }: SubElementsListProps) {
   const updateNumberingElement = useStore((s) => s.updateNumberingElement);
 

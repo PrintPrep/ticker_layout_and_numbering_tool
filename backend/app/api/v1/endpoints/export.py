@@ -27,8 +27,8 @@ async def direct_export(
         
         # Generate PDF directly
         pdf_generator = PDFGenerator(
-            quality=request.exportSettings.quality,
-            color_space=request.exportSettings.colorSpace
+            quality=request.exportSettings.quality, # e.g., 'high', 'medium', 'low'
+            color_space=request.exportSettings.colorSpace # e.g., 'RGB' or 'CMYK'
         )
         
         # Prepare front pages

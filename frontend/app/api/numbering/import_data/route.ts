@@ -4,6 +4,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
+const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || "http://localhost:8000";
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();

@@ -8,6 +8,7 @@ import { Download, Loader2 } from "lucide-react";
 
 export default function ExportButton() {
   const [isExporting, setIsExporting] = useState(false);
+  
   const front = useStore((s) => s.front);
   const back = useStore((s) => s.back);
   const placements = useStore((s) => s.placements);
@@ -15,7 +16,11 @@ export default function ExportButton() {
   const numberingElements = useStore((s) => s.numberingElements);
   const importedData = useStore((s) => s.importedData);
 
-  const handleDirectExport = async () => {
+  // Hardcoded export settings
+  const EXPORT_QUALITY = "print";
+  const COLOR_SPACE = "RGB";
+
+  const handleExport = async () => {
     if (!front) {
       alert("Please upload a front side design first.");
       return;
@@ -28,16 +33,15 @@ export default function ExportButton() {
     setIsExporting(true);
 
     try {
-      // Prepare export data - match the Python backend model exactly
+      // Prepare export data
       const exportData = {
         designFiles: {
-          frontFileId: front.url, // This should be the URL that Python backend can fetch
+          frontFileId: front.url,
           backFileId: back?.url || null,
         },
         layoutConfig: {
           placements: placements.map(p => ({
             ...p,
-            // Ensure all required fields are present
             index: p.index,
             xMm: p.xMm,
             yMm: p.yMm,
@@ -59,8 +63,8 @@ export default function ExportButton() {
           },
         },
         exportSettings: {
-          quality: "print",
-          colorSpace: "RGB",
+          quality: EXPORT_QUALITY,
+          colorSpace: COLOR_SPACE,
         },
         numberingConfig: numberingElements && (numberingElements.front.length > 0 || numberingElements.back.length > 0) ? {
           elements: [...numberingElements.front, ...numberingElements.back],
@@ -70,7 +74,7 @@ export default function ExportButton() {
 
       console.log("Sending export request...", exportData);
 
-      // Call the Next.js API route (not directly to Python backend)
+      // Call the direct export API route
       const response = await fetch("/api/export/direct", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -113,7 +117,7 @@ export default function ExportButton() {
 
   return (
     <button
-      onClick={handleDirectExport}
+      onClick={handleExport}
       disabled={isExporting}
       className="inline-flex items-center gap-2 rounded-lg bg-[#34C759] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#28A745] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#34C759] disabled:bg-gray-400 disabled:cursor-not-allowed"
     >
